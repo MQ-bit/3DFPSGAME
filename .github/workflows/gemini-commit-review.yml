@@ -3,7 +3,7 @@ name: Gemini PR Review
 on:
   pull_request:
     branches:
-      - develop
+      - main
     types:
       - opened
       - synchronize

@@ -11,5 +11,6 @@ public class GeminiReviewPractice : MonoBehaviour
 
         Debug.Log($"Player Position: {player.transform.position}");
         Debug.Log($"Player Position: {player.transform.position}");
+        Debug.Log($"Player Position: {player.transform.position}");
     }
 }
