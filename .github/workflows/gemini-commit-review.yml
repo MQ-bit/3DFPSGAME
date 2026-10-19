@@ -1,4 +1,4 @@
-name: Gemini PR Review
+name: Gemini Commit Review
 
 on:
   push:
@@ -6,28 +6,18 @@ on:
       - main
     paths:
       - 'Assets/02.Scripts/**/*.cs'
-  pull_request:
-    branches:
-      - main
-    types:
-      - opened
-      - synchronize
-      - reopened
-    paths:
-      - 'Assets/02.Scripts/**/*.cs'
+  workflow_dispatch:
 
 permissions:
-  contents: read
-  pull-requests: write
-  issues: write
+  contents: write
 
 concurrency:
-  group: gemini-review-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+  group: gemini-commit-review-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   review:
-    name: Review C# changes
+    name: Review C# commit
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -38,22 +28,26 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Create review diff
+      - name: Create commit diff
         shell: bash
         env:
-          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
-          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          COMMIT_SHA: ${{ github.sha }}
         run: |
-          if [[ "${BASE_SHA}" =~ ^0+$ ]]; then
-            BASE_SHA=$(git hash-object -t tree /dev/null)
+          if git rev-parse "${COMMIT_SHA}^" > /dev/null 2>&1; then
+            git diff \
+              --no-ext-diff \
+              --unified=80 \
+              "${COMMIT_SHA}^" \
+              "${COMMIT_SHA}" \
+              -- ':(glob)Assets/02.Scripts/**/*.cs' > commit.diff
+          else
+            git show \
+              --format= \
+              --no-ext-diff \
+              --unified=80 \
+              "${COMMIT_SHA}" \
+              -- ':(glob)Assets/02.Scripts/**/*.cs' > commit.diff
           fi
-
-          git diff \
-            --no-ext-diff \
-            --unified=80 \
-            "${BASE_SHA}" \
-            "${HEAD_SHA}" \
-            -- ':(glob)Assets/02.Scripts/**/*.cs' > commit.diff
 
           if [[ ! -s commit.diff ]]; then
             echo "Assets/02.Scripts에서 리뷰할 C# 변경사항이 없습니다."
@@ -71,7 +65,7 @@ jobs:
           gemini_api_key: ${{ secrets.GEMINI_API_KEY }}
           gemini_model: gemini-3.1-flash-lite
           prompt: |
-            commit.diff에 기록된 코드 변경사항을 리뷰하세요.
+            현재 저장소의 최신 커밋을 코드 리뷰하세요.
 
             반드시 먼저 commit.diff 파일을 읽고,
             Assets/02.Scripts 폴더에 포함된 C# 변경사항을 검토하세요.
@@ -96,7 +90,7 @@ jobs:
           REVIEW_ERROR: ${{ steps.gemini_review.outputs.error }}
         run: |
           {
-            echo "## Gemini PR Review"
+            echo "## Gemini Commit Review"
             echo
 
             if [[ -n "${REVIEW_BODY}" ]]; then
@@ -112,22 +106,22 @@ jobs:
             fi
           } >> "${GITHUB_STEP_SUMMARY}"
 
-      - name: Post review on PR
-        if: ${{ github.event_name == 'pull_request' && steps.gemini_review.outputs.summary != '' }}
+      - name: Post review on commit
+        if: ${{ steps.gemini_review.outputs.summary != '' }}
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
           REVIEW_BODY: ${{ steps.gemini_review.outputs.summary }}
           REPOSITORY: ${{ github.repository }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
+          COMMIT_SHA: ${{ github.sha }}
         run: |
           jq -n \
-            --arg body "## Gemini PR Review
+            --arg body "## Gemini Commit Review
 
           ${REVIEW_BODY}" \
             '{body: $body}' > comment.json
 
           gh api \
             --method POST \
-            "/repos/${REPOSITORY}/issues/${PR_NUMBER}/comments" \
+            "/repos/${REPOSITORY}/commits/${COMMIT_SHA}/comments" \
             --input comment.json
