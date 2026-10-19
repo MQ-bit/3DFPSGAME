@@ -1,6 +1,11 @@
 name: Gemini PR Review
 
 on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'Assets/02.Scripts/**/*.cs'
   pull_request:
     branches:
       - main
@@ -17,12 +22,12 @@ permissions:
   issues: write
 
 concurrency:
-  group: gemini-pr-review-${{ github.event.pull_request.number }}
+  group: gemini-review-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
   review:
-    name: Review C# PR
+    name: Review C# changes
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -33,12 +38,16 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Create PR diff
+      - name: Create review diff
         shell: bash
         env:
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
+          if [[ "${BASE_SHA}" =~ ^0+$ ]]; then
+            BASE_SHA=$(git hash-object -t tree /dev/null)
+          fi
+
           git diff \
             --no-ext-diff \
             --unified=80 \
@@ -62,7 +71,7 @@ jobs:
           gemini_api_key: ${{ secrets.GEMINI_API_KEY }}
           gemini_model: gemini-3.1-flash-lite
           prompt: |
-            현재 Pull Request의 코드 변경사항을 리뷰하세요.
+            commit.diff에 기록된 코드 변경사항을 리뷰하세요.
 
             반드시 먼저 commit.diff 파일을 읽고,
             Assets/02.Scripts 폴더에 포함된 C# 변경사항을 검토하세요.
@@ -104,7 +113,7 @@ jobs:
           } >> "${GITHUB_STEP_SUMMARY}"
 
       - name: Post review on PR
-        if: ${{ steps.gemini_review.outputs.summary != '' }}
+        if: ${{ github.event_name == 'pull_request' && steps.gemini_review.outputs.summary != '' }}
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
