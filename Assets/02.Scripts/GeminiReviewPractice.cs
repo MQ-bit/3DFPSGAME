@@ -10,6 +10,5 @@ public class GeminiReviewPractice : MonoBehaviour
         playerRigidbody.AddForce(Vector2.Up * 10f);
 
         Debug.Log($"Player Position: {player.transform.position}");
-        Debug.Log($"Player Position: {player.transform.position}");
     }
 }
