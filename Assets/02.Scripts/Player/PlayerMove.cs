@@ -4,11 +4,12 @@ using UnityEngine;
 [RequireComponent(typeof(CharacterController))]
 public class PlayerMove : MonoBehaviour
 {
-    public float _moveSpeed = 7f;    // 이동 속도 (m/s)
-    public float JumpPower = 7f;    // 점프할 때 위로 주는 속도 (m/s)
+    [SerializeField] private float _moveSpeed = 7f;    // 이동 속도 (m/s)
+    [SerializeField] private float _jumpPower = 7f;     // 점프할 때 위로 주는 속도 (m/s)
+    [SerializeField] private CharacterController _controller;
     private const float Gravity = -20f;    // 중력 가속도 (m/s²)
 
-    private CharacterController _controller;
+
     private float _yVelocity = 0f;  // 위아래 속도
 
     private void Awake()
@@ -36,7 +37,7 @@ public class PlayerMove : MonoBehaviour
         // 4. 바닥에서 점프 키를 누르면 위로 속도를 준다.
         if (Input.GetButtonDown("Jump") && _controller.isGrounded)
         {
-            _yVelocity = JumpPower;
+            _yVelocity = _jumpPower;
         }
 
         // 5. 중력을 누적한다. (v = v0 + a·t)
