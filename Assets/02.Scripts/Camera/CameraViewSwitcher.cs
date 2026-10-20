@@ -3,6 +3,7 @@ using UnityEngine;
 
 // 시점을 선택하고 위치·방향 설정을 전달한다. 실제 이동과 회전은 각 담당 컴포넌트가 처리한다.
 [DisallowMultipleComponent]
+[DefaultExecutionOrder(-300)]
 [RequireComponent(typeof(CameraFollow), typeof(CameraRotate))]
 public class CameraViewSwitcher : MonoBehaviour
 {

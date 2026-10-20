@@ -1,6 +1,7 @@
 using UnityEngine;
 
 // 마우스를 움직이면 카메라를 그 방향으로 회전시킨다.
+[DefaultExecutionOrder(-200)]
 public class CameraRotate : MonoBehaviour
 {
     public float RotationSpeed = 200f; // 마우스 감도 (1초에 도는 각도)
@@ -14,11 +15,18 @@ public class CameraRotate : MonoBehaviour
     private bool _followPlayerYaw;
     private Transform _player;
 
+    // 이동과 몸 회전도 같은 방향을 사용해 시점별 조작이 어긋나지 않게 한다.
+    public bool UsesMouseLook => _isFirstPerson || _followPlayerYaw;
+    public Quaternion MovementRotation => Quaternion.Euler(0f,
+        UsesMouseLook ? _accumulationX + _rotationEuler.y : _rotationEuler.y, 0f);
+
     private void OnEnable()
     {
         if (_isFirstPerson)
         {
-            _accumulationX = transform.eulerAngles.y;
+            _accumulationX = _player != null
+                ? _player.eulerAngles.y - _rotationEuler.y
+                : transform.eulerAngles.y - _rotationEuler.y;
             _accumulationY = Mathf.DeltaAngle(0f, transform.eulerAngles.x);
         }
     }
@@ -26,10 +34,10 @@ public class CameraRotate : MonoBehaviour
     public void SetViewSettings(bool isFirstPerson, Vector3 rotationEuler,
         bool followPlayerYaw, Transform player)
     {
-        // 다른 시점에서 돌아오면 몸의 현재 방향과 마지막 1인칭 상하 각도로 복귀한다.
-        if (isFirstPerson && !_isFirstPerson && player != null)
+        // 회전 시점으로 전환하면 현재 몸 방향에서 이어서 돌아 급격한 방향 전환을 막는다.
+        if ((isFirstPerson || followPlayerYaw) && player != null)
         {
-            _accumulationX = player.eulerAngles.y;
+            _accumulationX = player.eulerAngles.y - rotationEuler.y;
         }
 
         _isFirstPerson = isFirstPerson;
@@ -40,11 +48,12 @@ public class CameraRotate : MonoBehaviour
 
     private void Update()
     {
-        // 마우스 오른쪽 버튼을 누르고 있을 때만 카메라와 몸이 돈다.
-        if (!_isFirstPerson || !Input.GetMouseButton(1))
+        // 고정 시점에서는 마우스로 회전하지 않고 화면 방향을 유지한다.
+        if (!UsesMouseLook)
         {
             return;
         }
+
         // 1. 마우스 입력을 받는다.
         float mouseX = Input.GetAxis("Mouse X");
         float mouseY = Input.GetAxis("Mouse Y");
@@ -70,11 +79,7 @@ public class CameraRotate : MonoBehaviour
             return;
         }
 
-        // 3인칭·숄더뷰는 몸 방향을 따르고, 고정 시점은 월드 방향을 사용한다.
-        Quaternion referenceRotation = _followPlayerYaw && _player != null
-            ? Quaternion.Euler(0f, _player.eulerAngles.y, 0f)
-            : Quaternion.identity;
-
-        transform.rotation = referenceRotation * Quaternion.Euler(_rotationEuler);
+        // 3인칭·숄더뷰도 몸과 같은 좌우 각도를 사용하고, 고정 시점은 월드 방향을 유지한다.
+        transform.rotation = MovementRotation * Quaternion.Euler(_rotationEuler.x, 0f, _rotationEuler.z);
     }
 }

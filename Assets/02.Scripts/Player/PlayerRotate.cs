@@ -1,18 +1,58 @@
 using UnityEngine;
 
-// 마우스를 좌우로 움직이면 플레이어 몸을 좌우로 회전시킨다.
+// 회전 시점에서는 시선을, 고정 시점에서는 이동 방향을 향해 몸을 돌린다.
+[DefaultExecutionOrder(-100)]
 public class PlayerRotate : MonoBehaviour
 {
-    public float RotationSpeed = 200f; // CameraRotate와 같은 값으로 맞춘다.
+    public float RotationSpeed = 200f; // 카메라가 없을 때 사용할 마우스 감도
 
     private float _accumulationX = 0f;
+    [SerializeField] private CameraRotate _cameraRotate;
+
+    private void Awake()
+    {
+        _accumulationX = transform.eulerAngles.y;
+        if (_cameraRotate == null)
+        {
+            Camera viewCamera = GetComponentInChildren<Camera>();
+            if (viewCamera == null)
+            {
+                viewCamera = Camera.main;
+            }
+
+            if (viewCamera != null)
+            {
+                _cameraRotate = viewCamera.GetComponent<CameraRotate>();
+            }
+        }
+    }
 
     private void Update()
     {
-        //마우스 오른쪽 버튼을 누르고 있을 때만 카메라와 몸이 돌게 
-        if (!Input.GetMouseButton(1))
-            return;
+        if (_cameraRotate != null && _cameraRotate.isActiveAndEnabled)
+        {
+            if (_cameraRotate.UsesMouseLook)
+            {
+                // 1인칭·3인칭·숄더뷰: 카메라가 계산한 방향을 공유해 몸도 함께 회전한다.
+                transform.rotation = _cameraRotate.MovementRotation;
+            }
+            else
+            {
+                // 쿼터·탑다운·사이드뷰: 카메라는 고정하고 몸만 화면 기준 이동 방향을 향한다.
+                Vector3 input = new Vector3(Input.GetAxisRaw("Horizontal"), 0f,
+                    Input.GetAxisRaw("Vertical"));
+                if (input.sqrMagnitude > 0f)
+                {
+                    Vector3 direction = _cameraRotate.MovementRotation * input;
+                    transform.rotation = Quaternion.LookRotation(direction, Vector3.up);
+                }
+            }
 
+            _accumulationX = transform.eulerAngles.y;
+            return;
+        }
+
+        // 카메라 회전 컴포넌트가 없는 경우에도 마우스로 몸을 돌릴 수 있다.
         float mouseX = Input.GetAxis("Mouse X");
         _accumulationX += mouseX * RotationSpeed * Time.deltaTime;
 
