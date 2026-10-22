@@ -1413,6 +1413,7 @@ MonoBehaviour:
   _attackRange: 1.5
   _attackInterval: 1.2
   _moveSpeed: 5
+  _health: 30
 --- !u!143 &1063866433
 CharacterController:
   m_ObjectHideFlags: 0
