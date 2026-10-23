@@ -27,6 +27,7 @@ public class PlayerGunFire : MonoBehaviour
 
     private void Update()
     {
+        if (GameManager.Instance.State != GameState.Playing) return;
         // 0. 발사 타이머를 지난 시간만큼 줄인다.
         _fireTimer -= Time.deltaTime;
 
@@ -91,9 +92,18 @@ public class PlayerGunFire : MonoBehaviour
             effect.transform.forward = hitInfo.normal; // 수직 위치로 회전
             effect.Play();
 
+            // 대미지 구조체 만들기
+            var damageInfo = new DamageInfo();
+            damageInfo.Value = _damage;
+            damageInfo.HitPoint = hitInfo.point;
+            damageInfo.HitNormal = hitInfo.normal;
 
+            hitInfo.collider.GetComponent<IDamageable>()?.TakeDamage(damageInfo);
+            /*
             hitInfo.collider.GetComponent<Zombie>()?.TakeDamage(_damage);
-            hitInfo.collider.GetComponent<Drum>()?.Damage(_damage);
+            hitInfo.collider.GetComponent<Drum>()?.TakeDamage(_damage);
+            hitInfo.collider.GetComponent<Box>()?.TakeDamage(_damage);
+            */
         }
     }
 }
