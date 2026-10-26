@@ -28,6 +28,27 @@ public class ZombieSpawner : MonoBehaviour
             maxSize: _maxAliveCount);
     }
 
+    private void Start()
+    {
+        Prewarm();
+    }
+
+    // 첫 스폰 때 Instantiate 로 프레임이 튀지 않도록 미리 만들어 풀에 넣어둔다.
+    private void Prewarm()
+    {
+        var zombies = new Zombie[_maxAliveCount];
+
+        for (int i = 0; i < zombies.Length; i++)
+        {
+            zombies[i] = _pool.Get();
+        }
+
+        foreach (var zombie in zombies)
+        {
+            _pool.Release(zombie);
+        }
+    }
+
     private void Update()
     {
         if (GameManager.Instance.State != GameState.Playing) return;

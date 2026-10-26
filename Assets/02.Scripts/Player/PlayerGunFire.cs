@@ -6,6 +6,8 @@ using UnityEngine.EventSystems;
 // 마우스 왼쪽 버튼을 누르면 바라보는 방향으로 총알을 발사하고 싶다.
 public class PlayerGunFire : MonoBehaviour
 {
+    private const int HitEffectPoolSize = 16;
+
     [SerializeField] private ParticleSystem _hitEffectPrefab;
 
     [Header("스탯")][SerializeField] private int _maxBulletCount = 30;
@@ -94,10 +96,8 @@ public class PlayerGunFire : MonoBehaviour
             // Debug.Log($"{hitInfo.collider.name}이 총알을 맞았다. 대미지: {_damage}");
 
             // 맞은 자리에 총알 자국 이펙트 만들기
-            var effect = Instantiate(_hitEffectPrefab);
-            effect.transform.position = hitInfo.point; // 맞은 자리
-            effect.transform.forward = hitInfo.normal; // 수직 위치로 회전
-            effect.Play();
+            // 맞은 자리에서 수직 방향으로 회전해 재생한다.
+            EffectManager.Instance.Play(_hitEffectPrefab, hitInfo.point, Quaternion.LookRotation(hitInfo.normal), 1f, HitEffectPoolSize);
 
             // 대미지 구조체 만들기
             var damageInfo = new DamageInfo();

@@ -30,6 +30,9 @@ public enum ZombieState
 
 public class Zombie : MonoBehaviour, IDamageable
 {
+    private const int BloodSprayPoolSize = 4;   // 한 좀비에 동시에 남아있는 최대 혈흔 수
+    private const float BloodSprayDuration = 1f;   // 피가 뿜어지는 시간(초)
+
     [Header("스탯")]
     [SerializeField] private float _detectDistance = 8;    // 플레이어를 발견하는 거리
     [SerializeField] private float _combackDistance = 15;   // 처음 자리에서 이만큼 멀어지면 돌아가는 거리
@@ -78,7 +81,7 @@ public class Zombie : MonoBehaviour, IDamageable
     private Dictionary<ZombieState, ZombieStateBase> _states;
     private ZombieStateBase _currentState;
     private ZombieStateBase _activeTopState;   // 현재 상태를 품은 최상위 상태. Update의 진입점
-    private readonly List<GameObject> _bloodSprays = new List<GameObject>();
+    private RingBufferPool<Transform> _bloodSprayPool;   // 좀비마다 가지는 혈흔 풀. 가장 오래된 것부터 다시 쓴다.
 
     private void Awake()
     {
@@ -89,6 +92,9 @@ public class Zombie : MonoBehaviour, IDamageable
         // 체력 UI가 Start에서 값을 읽으므로 Awake에서 초기화한다.
         _health = _maxHealth;
         _startPosition = transform.position;
+
+        // 혈흔은 좀비의 자식으로 만들어 같이 움직이게 한다.
+        _bloodSprayPool = new RingBufferPool<Transform>(_bloodSprayPrefab.transform, BloodSprayPoolSize, transform, ConfigureBloodSpray);
 
         CreateStates();
         ChangeState(ZombieState.Idle);
@@ -113,6 +119,21 @@ public class Zombie : MonoBehaviour, IDamageable
         };
     }
 
+    // 혈흔 프리팹은 계속 뿜는(looping) 설정이라 맞을 때마다 피를 흘린 채로 남는다.
+    // 서드파티 프리팹을 고치지 않고 생성 직후 코드에서 한 번 뿜고 끝나게 바꾼다.
+    private static void ConfigureBloodSpray(Transform spray)
+    {
+        foreach (ParticleSystem particle in spray.GetComponentsInChildren<ParticleSystem>(true))
+        {
+            // duration 은 멈춘 상태에서만 바꿀 수 있다.
+            particle.Stop(false, ParticleSystemStopBehavior.StopEmittingAndClear);
+
+            ParticleSystem.MainModule main = particle.main;
+            main.loop = false;
+            main.duration = BloodSprayDuration;
+        }
+    }
+
     // 풀에서 꺼낼 때 위치와 상태를 처음 스폰된 상태로 되돌린다.
     public void Init(Vector3 position, Quaternion rotation)
     {
@@ -125,11 +146,8 @@ public class Zombie : MonoBehaviour, IDamageable
         _health = _maxHealth;
         ChangeState(ZombieState.Idle);
 
-        foreach (GameObject bloodSpray in _bloodSprays)
-        {
-            if (bloodSpray != null) Destroy(bloodSpray);
-        }
-        _bloodSprays.Clear();
+        // 이전 삶에서 남은 혈흔을 모두 끈다.
+        _bloodSprayPool.ForEachCreated(static spray => spray.gameObject.SetActive(false));
 
         // 체력바를 가득 찬 상태로 갱신한다.
         OnDamaged?.Invoke();
@@ -210,11 +228,12 @@ public class Zombie : MonoBehaviour, IDamageable
         if (_health > 0f)
         {
             // 좀비의 자식으로 블러드 스프레이를 생성! -> 위치 수정!
-            GameObject bloodSpray = Instantiate(_bloodSprayPrefab, transform);
-            _bloodSprays.Add(bloodSpray);
-            //bloodSpray.transform.SetParent(transform);
-            bloodSpray.transform.position = damageInfo.HitPoint;
-            bloodSpray.transform.forward = damageInfo.HitNormal;
+            // 껐다 켜서 파티클을 처음부터 다시 재생한다. (새로 만든 것도 이미 재생 중이다.)
+            Transform bloodSpray = _bloodSprayPool.Get();
+            bloodSpray.gameObject.SetActive(false);
+            bloodSpray.position = damageInfo.HitPoint;
+            bloodSpray.forward = damageInfo.HitNormal;
+            bloodSpray.gameObject.SetActive(true);
 
             // 잠깐 멈칫 하고 싶다!
             ChangeState(ZombieState.Hit);

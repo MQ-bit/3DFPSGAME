@@ -5,6 +5,8 @@ using UnityEngine;
 [RequireComponent(typeof(Rigidbody))]
 public class Drum : MonoBehaviour, IDamageable
 {
+    private const int ExplosionEffectPoolSize = 6;
+
     [SerializeField] private ParticleSystem _explosionEffectPrefab;
 
     [Header("스탯")][SerializeField] private float _damage = 100f;
@@ -38,9 +40,7 @@ public class Drum : MonoBehaviour, IDamageable
         yield return new WaitForSeconds(_explosionDelay);
 
         // 1. 폭발 이펙트를 생성한다.
-        var effect = Instantiate(_explosionEffectPrefab, transform.position, Quaternion.identity);
-        effect.transform.localScale = Vector3.one * 10f;
-        effect.Play();
+        EffectManager.Instance.Play(_explosionEffectPrefab, transform.position, Quaternion.identity, 10f, ExplosionEffectPoolSize);
 
         // 2. 위로 튀어오르며 빙글빙글 돈다.
         _rigidbody.AddForce(Vector3.up * _launchPower, ForceMode.Impulse);
