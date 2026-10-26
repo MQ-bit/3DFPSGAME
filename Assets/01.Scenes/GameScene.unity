@@ -2491,6 +2491,13 @@ MonoBehaviour:
   _range: 100
   _damage: 10
   _fireInterval: 0.1
+  _muzzle: {fileID: 0}
+  _laserStartOffset: {x: 0.3, y: -0.25, z: 0.6}
+  _laserMaterial: {fileID: 2100000, guid: 651c49337ae44067a226e47bee0f1930, type: 2}
+  _laserWidth: 0.02
+  _laserIdleColor: {r: 0.2, g: 1, b: 0.4, a: 1}
+  _laserFireColor: {r: 1, g: 0.15, b: 0.1, a: 1}
+  _laserFireFlashDuration: 0.1
 --- !u!114 &1074656625
 MonoBehaviour:
   m_ObjectHideFlags: 0
