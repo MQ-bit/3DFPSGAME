@@ -19,8 +19,11 @@ public class UI_HitEffect : MonoBehaviour
 
     private void Start()
     {
-        var player = FindAnyObjectByType<Player>();
-        if (player != null) player.OnDamaged += OnPlayerDamaged;
+        Player player = GameObject.FindAnyObjectByType<Player>();
+        if (player != null)
+        {
+            player.OnDamaged += OnPlayerDamaged;
+        }
     }
 
     private void OnPlayerDamaged()
