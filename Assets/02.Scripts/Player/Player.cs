@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 public class Player : MonoBehaviour, IDamageable
@@ -20,9 +21,14 @@ public class Player : MonoBehaviour, IDamageable
 
         Health -= damageInfo.Value;
 
+        OnDamaged?.Invoke();
+
         _uiHitEffect.Fade(0.7f);
 
         Debug.Log($"플레이어가 맞았다. 대미지 {damageInfo.Value}, 남은 체력 {Health}");
         if (Health <= 0f) GameManager.Instance.GameOver();
     }
+
+    // Action 자료형: 함수(들)을 저장할 수 있다.
+    public event Action OnDamaged;
 }
