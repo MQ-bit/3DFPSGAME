@@ -12,6 +12,11 @@ public class ZombieSpawner : MonoBehaviour
     private ObjectPool<Zombie> _pool;
     private float _spawnTimer = 0f;
 
+    public int AliveCount => _pool.CountActive;
+
+    // 살아있는 좀비 수가 바뀔 때 UI 등이 구독한다.
+    public event System.Action OnCountChanged;
+
     private void Awake()
     {
         _pool = new ObjectPool<Zombie>(
@@ -44,6 +49,8 @@ public class ZombieSpawner : MonoBehaviour
         Zombie zombie = _pool.Get();
         zombie.OnDeath += Release;
         zombie.Init(point.position, point.rotation);
+
+        OnCountChanged?.Invoke();
     }
 
     private Zombie CreateZombie()
@@ -55,5 +62,7 @@ public class ZombieSpawner : MonoBehaviour
     {
         zombie.OnDeath -= Release;
         _pool.Release(zombie);
+
+        OnCountChanged?.Invoke();
     }
 }
