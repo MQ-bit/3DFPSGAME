@@ -1,5 +1,6 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 
 // 마우스 왼쪽 버튼을 누르면 바라보는 방향으로 총알을 발사하고 싶다.
@@ -31,25 +32,31 @@ public class PlayerGunFire : MonoBehaviour
         // 0. 발사 타이머를 지난 시간만큼 줄인다.
         _fireTimer -= Time.deltaTime;
 
-        // 1. 마우스 왼쪽 버튼 입력 받기
-        if (Input.GetButton("Fire1") && _fireTimer <= 0f && _bulletCount > 0)
+        // 1. 버튼을 누르고 있고, 마우스가 UI 위에 있지 않고, 쏠 때가 되었고, 총알이 남아 있으면 쏜다.
+        bool isPointerOverUI = EventSystem.current.IsPointerOverGameObject();
+        if (Input.GetButton("Fire1") && !isPointerOverUI && _fireTimer <= 0f && _bulletCount > 0)
         {
-            _bulletCount--;
-            _fireTimer = _fireInterval;
-            Shoot();
 
-            // 이 방식은: 이 모노비헤이비어가 등록한 모든 코루틴을 실행 취소
-            // StopAllCoroutines();
-
-            if (_reloadCoroutine != null)
+            // 2. 마우스 왼쪽 버튼 입력 받기
+            if (Input.GetButton("Fire1") && _fireTimer <= 0f && _bulletCount > 0)
             {
-                StopCoroutine(_reloadCoroutine);
-                Debug.Log("재장전 취소!");
-                _reloadCoroutine = null;
+                _bulletCount--;
+                _fireTimer = _fireInterval;
+                Shoot();
+
+                // 이 방식은: 이 모노비헤이비어가 등록한 모든 코루틴을 실행 취소
+                // StopAllCoroutines();
+
+                if (_reloadCoroutine != null)
+                {
+                    StopCoroutine(_reloadCoroutine);
+                    Debug.Log("재장전 취소!");
+                    _reloadCoroutine = null;
+                }
             }
         }
 
-        // 2. R키 누르면 총알 재장전 시작
+        // 3. R키 누르면 총알 재장전 시작
         if (Input.GetKeyDown(KeyCode.R) && _reloadCoroutine == null)
             _reloadCoroutine = StartCoroutine(Reloading_Coroutine());
     }

@@ -18,6 +18,6 @@ public class ZombieHealthBar : MonoBehaviour
         //0~100%
         _slider.value = _zombie.Health / _zombie.MaxHealth;
 
-        transform.forward = Camera.main.transform.forward;
+        _slider.transform.forward = Camera.main.transform.forward;
     }
 }
