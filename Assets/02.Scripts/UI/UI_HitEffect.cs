@@ -10,7 +10,6 @@ public class UI_HitEffect : MonoBehaviour
 
     private Image _image;
 
-
     private void Awake()
     {
         _image = GetComponent<Image>();
@@ -19,14 +18,18 @@ public class UI_HitEffect : MonoBehaviour
 
     private void Start()
     {
-        var player = FindAnyObjectByType<Player>();
-        if (player != null) player.OnDamaged += OnPlayerDamaged;
+        Player player = GameObject.FindAnyObjectByType<Player>();
+        if (player != null)
+        {
+            player.OnDamaged += OnPlayerDamaged;
+        }
     }
 
     private void OnPlayerDamaged()
     {
         Fade(0.6f);
     }
+
 
     public void Flash(float alpha)
     {
@@ -56,13 +59,13 @@ public class UI_HitEffect : MonoBehaviour
     {
         _image.enabled = true;
 
-        var elpasedTime = 0f;
+        float elpasedTime = 0f;
 
-        var startAlpha = _image.color.a;
+        float startAlpha = _image.color.a;
 
         while (elpasedTime < _fadeTime)
         {
-            var alpha = Mathf.Lerp(startAlpha, 0f, elpasedTime / _fadeTime);
+            float alpha = Mathf.Lerp(startAlpha, 0f, elpasedTime / _fadeTime);
 
             SetAlpha(alpha);
 
@@ -76,7 +79,7 @@ public class UI_HitEffect : MonoBehaviour
 
     private void SetAlpha(float alpha)
     {
-        var color = _image.color;
+        Color color = _image.color;
         color.a = alpha;
         _image.color = color;
     }

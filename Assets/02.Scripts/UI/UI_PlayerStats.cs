@@ -10,15 +10,18 @@ public class UI_PlayerStats : MonoBehaviour
     [SerializeField] private Player _player;
     [SerializeField] private PlayerMove _playerMove;
 
+
     private void Start()
     {
         // 플레이어 공격 이벤트 구독!
         _player.OnDamaged += RefreshHealth;
     }
 
+    // 업데이트가 초당 60회 이상은 실행인된다.
     private void Update()
     {
         // RefreshHealth(); // 폴링
+
         _staminaSlider.value = _playerMove.Stamina / PlayerMove.MaxStamina;
     }
 

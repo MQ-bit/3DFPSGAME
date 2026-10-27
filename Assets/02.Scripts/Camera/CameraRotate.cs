@@ -5,21 +5,16 @@ public class CameraRotate : MonoBehaviour
 {
     [SerializeField] private float _rotationSpeed = 200f;
 
-    private float _accumulationX; // 좌우   회전 각도
-    private float _accumulationY; // 위아래 회전 각도
+    private float _accumulationX = 0f; // 좌우   회전 각도
+    private float _accumulationY = 0f; // 위아래 회전 각도
 
     private void Update()
     {
-        // 커서가 풀려 있으면(UI를 누르는 중이면) 시선을 돌리지 않는다.
-        if (Cursor.lockState != CursorLockMode.Locked)
-        {
-            return;
-        }
         if (GameManager.Instance.State != GameState.Playing) return;
 
         // 1. 마우스 입력을 받는다.
-        var mouseX = Input.GetAxis("Mouse X");
-        var mouseY = Input.GetAxis("Mouse Y");
+        float mouseX = Input.GetAxis("Mouse X");
+        float mouseY = Input.GetAxis("Mouse Y");
 
         // 2. 마우스 입력 만큼 회전값을 누적한다.
         _accumulationX += mouseX * _rotationSpeed * Time.deltaTime;
