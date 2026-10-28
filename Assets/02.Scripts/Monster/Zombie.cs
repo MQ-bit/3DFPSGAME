@@ -52,10 +52,14 @@ public class Zombie : MonoBehaviour, IDamageable
 
     private ZombieState _state = ZombieState.Idle;
 
+    private void Awake()
+    {
+        // 체력바(ZombieHealthBar)가 첫 프레임부터 올바른 값을 읽도록 Awake에서 초기화한다.
+        _health = _maxHealth;
+    }
+
     private void Start()
     {
-        _health = _maxHealth;
-
         // 길을 찾아 걷게 해주는 컴포넌트 NavMeshAgent를 찾아서 참조
         _agent = GetComponent<NavMeshAgent>();
         _agent.speed = _moveSpeed;

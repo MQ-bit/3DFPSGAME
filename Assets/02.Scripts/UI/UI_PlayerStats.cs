@@ -15,6 +15,9 @@ public class UI_PlayerStats : MonoBehaviour
     {
         // 플레이어 공격 이벤트 구독!
         _player.OnDamaged += RefreshHealth;
+
+        // 맞기 전에도 현재 체력으로 체력바를 채워 둔다.
+        RefreshHealth();
     }
 
     // 업데이트가 초당 60회 이상은 실행인된다.

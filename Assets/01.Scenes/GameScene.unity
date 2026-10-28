@@ -4315,6 +4315,11 @@ MonoBehaviour:
   _range: 100
   _damage: 10
   _fireInterval: 0.1
+  _tracerMaterial: {fileID: 2100000, guid: 823b91f70edc9ad4a908187a31f62d77, type: 2}
+  _tracerColor: {r: 1, g: 0.85, b: 0.4, a: 1}
+  _tracerWidth: 0.03
+  _tracerDuration: 0.08
+  _muzzleOffset: {x: 0.15, y: -0.28, z: 1}
 --- !u!114 &1620558216
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4330,6 +4335,7 @@ MonoBehaviour:
   _firePoint: {fileID: 2015785248}
   _bombPrefab: {fileID: 64837993550276244, guid: 9a61cdad899c6ca44b785e76de4d9420, type: 3}
   _throwPower: 15
+  _throwFadeTime: 0.3
 --- !u!114 &1620558217
 MonoBehaviour:
   m_ObjectHideFlags: 0

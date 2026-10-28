@@ -13,16 +13,28 @@ public class PlayerGunFire : MonoBehaviour
     [SerializeField] private float _range = 100f; // 사거리
     [SerializeField] private float _damage = 10f; // 공격력
     [SerializeField] private float _fireInterval = 0.1f; // 발사 속도
+
+    [Header("총알 궤적")]
+    [SerializeField] private Material _tracerMaterial;
+    [SerializeField] private Color _tracerColor = new Color(1f, 0.85f, 0.4f);
+    [SerializeField] private float _tracerWidth = 0.03f;
+    [SerializeField] private float _tracerDuration = 0.08f; // 궤적이 남아 있는 시간 (초)
+    [SerializeField] private Vector3 _muzzleOffset = new Vector3(0.15f, -0.28f, 1f); // 카메라 기준 총구 위치 (오른쪽, 위, 앞)
+
     private Animator _animator; // 군인 모델의 애니메이터
     private int _bulletCount;
 
     private float _fireTimer;
     private Coroutine _reloadCoroutine;
+    private int _fireLayer; // Fire Layer의 번호
+
+    private const float RecoilBlendTime = 0.03f; // 반동 모션을 처음부터 다시 재생할 때 섞는 시간 (초)
 
     private void Start()
     {
         _bulletCount = _maxBulletCount;
         _animator = GetComponentInChildren<Animator>();
+        _fireLayer = _animator.GetLayerIndex("Fire Layer");
     }
 
 
@@ -35,13 +47,19 @@ public class PlayerGunFire : MonoBehaviour
 
         // 1. 마우스 왼쪽 버튼 입력 받기
         var isMouseVisible = Cursor.visible;
-        if (!isMouseVisible && Input.GetButton("Fire1") && _fireTimer <= 0f && _bulletCount > 0)
+        var isFiring = !isMouseVisible && Input.GetButton("Fire1") && _bulletCount > 0;
+
+        // 버튼을 누르고 있는 동안은 발사 간격 사이에도 Fire를 유지해야 사격 모션이 떨리지 않는다.
+        _animator.SetBool("Fire", isFiring);
+
+        if (isFiring && _fireTimer <= 0f)
         {
             _bulletCount--;
             _fireTimer = _fireInterval;
             Shoot();
 
-            _animator.SetBool("Fire", true);
+            // 한 발마다 반동 모션을 처음부터 다시 재생한다. (클립 반동이 시작 직후에만 있다)
+            _animator.CrossFadeInFixedTime("Fire", RecoilBlendTime, _fireLayer, 0f);
 
             // 이 방식은: 이 모노비헤이비어가 등록한 모든 코루틴을 실행 취소
             // StopAllCoroutines();
@@ -52,10 +70,6 @@ public class PlayerGunFire : MonoBehaviour
                 Debug.Log("재장전 취소!");
                 _reloadCoroutine = null;
             }
-        }
-        else
-        {
-            _animator.SetBool("Fire", false);
         }
 
         // 2. R키 누르면 총알 재장전 시작
@@ -76,6 +90,31 @@ public class PlayerGunFire : MonoBehaviour
     }
 
 
+    // 총구에서 도착 지점까지 라인렌더러로 선을 그리고, 잠깐 뒤에 지운다.
+    private void ShowTracer(Vector3 endPoint)
+    {
+        var cameraTransform = Camera.main.transform;
+        var muzzle = cameraTransform.position
+                     + cameraTransform.right * _muzzleOffset.x
+                     + cameraTransform.up * _muzzleOffset.y
+                     + cameraTransform.forward * _muzzleOffset.z;
+
+        var tracer = new GameObject("BulletTracer");
+        var line = tracer.AddComponent<LineRenderer>();
+        line.positionCount = 2;
+        line.SetPosition(0, muzzle);
+        line.SetPosition(1, endPoint);
+        line.startWidth = _tracerWidth;
+        line.endWidth = _tracerWidth;
+        line.startColor = _tracerColor;
+        line.endColor = _tracerColor;
+        line.sharedMaterial = _tracerMaterial;
+        line.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        line.receiveShadows = false;
+
+        Destroy(tracer, _tracerDuration);
+    }
+
     private void Shoot()
     {
         // Ray: 레이저(시작위치, 날아갈 방향)
@@ -91,6 +130,11 @@ public class PlayerGunFire : MonoBehaviour
 
         // 4. 레이를 발사하고, 만일 부딛힌 물체가 있다면 이펙트 표시하기
         var isHit = Physics.Raycast(ray, out hitInfo, _range);
+
+        // 맞았으면 맞은 자리까지, 허공이면 사거리 끝까지 총알 궤적을 그린다.
+        var tracerEnd = isHit ? hitInfo.point : ray.origin + ray.direction * _range;
+        ShowTracer(tracerEnd);
+
         if (isHit)
         {
             // Debug.Log($"{hitInfo.collider.name}이 총알을 맞았다. 대미지: {_damage}");

@@ -16,12 +16,16 @@ public class Player : MonoBehaviour, IDamageable
     private Animator _animator;
     private int _injuredLayerIndex;
 
+    private void Awake()
+    {
+        // 다른 스크립트(UI 등)가 Start에서 체력을 읽어도 되도록 Awake에서 초기화한다.
+        _health = _maxHealth;
+    }
+
     private void Start()
     {
         _animator = GetComponentInChildren<Animator>();
         _injuredLayerIndex = _animator.GetLayerIndex("Injured Layer");
-
-        _health = _maxHealth;
     }
 
     public void TakeDamage(DamageInfo damageInfo)
