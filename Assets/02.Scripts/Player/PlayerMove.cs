@@ -7,14 +7,8 @@ public class PlayerMove : MonoBehaviour
     private const int MaxJumps = 2;
     public const float MaxStamina = 100f;
 
-    private float _yVelocity = 0f;  // 위아래 속도, 매 프레임마다 중력 가속도가 붙는다.
-    private int _jumpCount = 0;   // 점프 횟수
-    private float _stamina = 0f;
+    [Header("스탯")][SerializeField] private float _moveSpeed = 7f;
 
-    public float Stamina => _stamina;
-
-    [Header("스탯")]
-    [SerializeField] private float _moveSpeed = 7f;
     [SerializeField] private float _sprintSpeed = 12f;
     [SerializeField] private float _jumpPower = 10f;
     [SerializeField] private float _staminaRecovery = 15f;
@@ -22,13 +16,20 @@ public class PlayerMove : MonoBehaviour
     [SerializeField] private float _jumpCost = 20f;
 
 
-    [Header("컴포넌트")]
-    [SerializeField] private CharacterController _characterController;
+    [Header("컴포넌트")][SerializeField] private CharacterController _characterController;
+
+    private Animator _animator; // 군인 모델의 동작을 바꿔 주는 컴포넌트
+    private int _jumpCount; // 점프 횟수
+
+    private float _yVelocity; // 위아래 속도, 매 프레임마다 중력 가속도가 붙는다.
+
+    public float Stamina { get; private set; }
 
     private void Awake()
     {
         _characterController = GetComponent<CharacterController>();
-        _stamina = MaxStamina;
+        Stamina = MaxStamina;
+        _animator = GetComponentInChildren<Animator>(); // 자식인 Model에 붙어 있다.
     }
 
     private void Update()
@@ -36,22 +37,23 @@ public class PlayerMove : MonoBehaviour
         if (GameManager.Instance.State != GameState.Playing) return;
 
         // 0. 스태미나 회복
-        _stamina = Mathf.Min(MaxStamina, _stamina + _staminaRecovery * Time.deltaTime);
+        Stamina = Mathf.Min(MaxStamina, Stamina + _staminaRecovery * Time.deltaTime);
 
         // 1. 키보드 입력을 받는다.
-        float h = Input.GetAxisRaw("Horizontal"); // -1, 0, 1
-        float v = Input.GetAxisRaw("Vertical"); // -1, 0, 1
+        var h = Input.GetAxisRaw("Horizontal"); // -1, 0, 1
+        var v = Input.GetAxisRaw("Vertical"); // -1, 0, 1
 
         // 2. 키보드 입력에 따라 방향을 구한다.
-        Vector3 direction = new Vector3(h, 0, v);
+        var direction = new Vector3(h, 0, v);
         direction.Normalize(); // 대각선이어도 방향의 길이 1로 바꾸기 위해
         // 캐릭터의 회전 방향을 기준으로 로컬 방향 벡터를 월드 방향 벡터로 변환한다.
+        _animator.SetFloat("MoveMotion", direction.magnitude); // 움직이면 1, 멈추면 0
         direction = transform.TransformDirection(direction);
         // 로컬 좌표계: 한 대상을 중심
         // 월드 좌표계: 세상을 중심
 
         // 3. 땅에 서있지 않을때만 중력을 누적한다.
-        if (_characterController.isGrounded == false)
+        if (!_characterController.isGrounded)
         {
             _yVelocity += Gravity * Time.deltaTime;
         }
@@ -63,24 +65,24 @@ public class PlayerMove : MonoBehaviour
         }
 
         // 4. 만약에 점프키를 누르면 && 점프 카운트가 MaxJumps 이하라면 ... 점프를한다.
-        if (Input.GetButtonDown("Jump") && _jumpCount < MaxJumps && _stamina >= _jumpCost)
+        if (Input.GetButtonDown("Jump") && _jumpCount < MaxJumps && Stamina >= _jumpCost)
         {
             _yVelocity = _jumpPower;
             _jumpCount++;
-            _stamina -= _jumpCost;
+            Stamina -= _jumpCost;
         }
 
         // 5. 속도를 구한다.
-        float requiredStamina = _sprintCost * Time.deltaTime;
-        bool isSprint = Input.GetButton("Sprint") && _stamina > requiredStamina;
-        float currentSpeed = _moveSpeed;
+        var requiredStamina = _sprintCost * Time.deltaTime;
+        var isSprint = Input.GetButton("Sprint") && Stamina > requiredStamina;
+        var currentSpeed = _moveSpeed;
         if (isSprint)
         {
             currentSpeed = _sprintSpeed;
-            _stamina -= requiredStamina;
+            Stamina -= requiredStamina;
         }
 
-        Vector3 velocity = direction * currentSpeed;
+        var velocity = direction * currentSpeed;
         velocity.y = _yVelocity;
 
         // 6. 속도(방향과 속력)에 따라 이동한다.
