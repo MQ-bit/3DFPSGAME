@@ -21,6 +21,8 @@ public class PlayerGunFire : MonoBehaviour
     [SerializeField] private float _tracerDuration = 0.08f; // 궤적이 남아 있는 시간 (초)
     [SerializeField] private Vector3 _muzzleOffset = new Vector3(0.15f, -0.28f, 1f); // 카메라 기준 총구 위치 (오른쪽, 위, 앞)
 
+    [SerializeField] private GameObject[] _muzzleFlashes;  // 총구 불꽃 (이 가운데 하나를 켠다)
+    [SerializeField] private float _flashTime = 0.05f;     // 불꽃이 보이는 시간 (초)
     public event Action<int, int> OnBulletChanged;
     public int BulletCount => _bulletCount;
     public int MaxBulletCount => _maxBulletCount;
@@ -44,6 +46,12 @@ public class PlayerGunFire : MonoBehaviour
 
         _animator = GetComponentInChildren<Animator>();
         _fireLayer = _animator.GetLayerIndex("Fire Layer");
+
+        // 사격 전에는 불꽃이 보이지 않도록 모두 꺼둔다.
+        foreach (GameObject flash in _muzzleFlashes)
+        {
+            flash.SetActive(false);
+        }
     }
 
 
@@ -127,6 +135,7 @@ public class PlayerGunFire : MonoBehaviour
 
     private void Shoot()
     {
+        StartCoroutine(MuzzleFlash_Coroutine());  // 총구에서 불꽃이 번쩍인다.
         // Ray: 레이저(시작위치, 날아갈 방향)
         // Physics.RayCast: 레이저를 발사
         // RayCastHit: 레이저가 물체와 부딛히면 그 정보를 저장하는 구조체
@@ -173,5 +182,19 @@ public class PlayerGunFire : MonoBehaviour
             // 김민쉬:     Zombie, Boss
             // 박현서:  Drum, Box, Bird
         }
+
+
     }
+
+    // 불꽃 하나를 무작위로 골라 잠깐 켰다가 끈다.
+    private IEnumerator MuzzleFlash_Coroutine()
+    {
+        if (_muzzleFlashes == null || _muzzleFlashes.Length == 0) yield break;
+
+        GameObject flash = _muzzleFlashes[UnityEngine.Random.Range(0, _muzzleFlashes.Length)];
+        flash.SetActive(true);
+        yield return new WaitForSeconds(_flashTime);
+        flash.SetActive(false);
+    }
+
 }
