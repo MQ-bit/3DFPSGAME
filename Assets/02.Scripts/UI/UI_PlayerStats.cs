@@ -1,3 +1,4 @@
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -11,10 +12,12 @@ public class UI_PlayerStats : MonoBehaviour
     [SerializeField] private PlayerMove _playerMove;
 
 
+
     private void Start()
     {
         // 플레이어 공격 이벤트 구독!
         _player.OnDamaged += RefreshHealth;
+
 
         // 맞기 전에도 현재 체력으로 체력바를 채워 둔다.
         RefreshHealth();
@@ -41,4 +44,6 @@ public class UI_PlayerStats : MonoBehaviour
 
         _healthSlider.value = _player.Health / _player.MaxHealth;
     }
+
+
 }

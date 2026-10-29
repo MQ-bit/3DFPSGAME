@@ -1,6 +1,6 @@
 using System.Collections;
 using UnityEngine;
-
+using System;
 
 // 마우스 왼쪽 버튼을 누르면 바라보는 방향으로 총알을 발사하고 싶다.
 public class PlayerGunFire : MonoBehaviour
@@ -21,6 +21,10 @@ public class PlayerGunFire : MonoBehaviour
     [SerializeField] private float _tracerDuration = 0.08f; // 궤적이 남아 있는 시간 (초)
     [SerializeField] private Vector3 _muzzleOffset = new Vector3(0.15f, -0.28f, 1f); // 카메라 기준 총구 위치 (오른쪽, 위, 앞)
 
+    public event Action<int, int> OnBulletChanged;
+    public int BulletCount => _bulletCount;
+    public int MaxBulletCount => _maxBulletCount;
+
     private Animator _animator; // 군인 모델의 애니메이터
     private int _bulletCount;
 
@@ -30,9 +34,14 @@ public class PlayerGunFire : MonoBehaviour
 
     private const float RecoilBlendTime = 0.03f; // 반동 모션을 처음부터 다시 재생할 때 섞는 시간 (초)
 
-    private void Start()
+    private void Awake()
     {
         _bulletCount = _maxBulletCount;
+    }
+
+    private void Start()
+    {
+
         _animator = GetComponentInChildren<Animator>();
         _fireLayer = _animator.GetLayerIndex("Fire Layer");
     }
@@ -55,6 +64,7 @@ public class PlayerGunFire : MonoBehaviour
         if (isFiring && _fireTimer <= 0f)
         {
             _bulletCount--;
+            OnBulletChanged?.Invoke(_bulletCount, _maxBulletCount);  // 한 발 줄었다고 알린다.
             _fireTimer = _fireInterval;
             Shoot();
 
@@ -84,7 +94,7 @@ public class PlayerGunFire : MonoBehaviour
         yield return new WaitForSeconds(_reloadingTime);
 
         _bulletCount = _maxBulletCount;
-
+        OnBulletChanged?.Invoke(_bulletCount, _maxBulletCount);  // 탄창을 채웠다고 알린다.
         Debug.Log("재장전 완료!");
         _reloadCoroutine = null;
     }

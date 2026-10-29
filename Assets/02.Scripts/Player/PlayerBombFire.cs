@@ -7,6 +7,7 @@ public class PlayerBombFire : MonoBehaviour
 {
     [SerializeField] private Transform _firePoint;
     [SerializeField] private Bomb _bombPrefab;
+    [SerializeField] private int _maxBombCount = 3;   // 가질 수 있는 폭탄 수
 
     [Header("던지는 힘")]
     [SerializeField] private float _minThrowPower = 8f;     // 바로 뗐을 때의 힘
@@ -17,13 +18,17 @@ public class PlayerBombFire : MonoBehaviour
     [SerializeField] private float _releaseTime = 0.37f;    // 동작이 이만큼 진행되면 수류탄이 손을 떠난다 (0 ~ 1)
     [SerializeField] private float _throwFadeTime = 0.3f;   // 던진 뒤 팔이 총으로 돌아오는 시간 (초)
 
+    public int BombCount => _bombCount;               // 남은 폭탄 수 (밖에서는 읽기만 한다)
+    public event System.Action<int> OnBombChanged;    // 폭탄 수가 바뀌면 남은 수를 알린다.
+
+    private Player _player;
     private Animator _animator;
     private int _throwLayer;     // Throw Layer의 번호
     private float _throwWeight;  // Throw Layer의 지금 무게
 
     private bool _isCharging;     // 오른쪽 버튼을 누르고 모으는 중인가
     private float _chargeTime;    // 지금까지 모은 시간 (초)
-
+    private int _bombCount;       // 남은 폭탄 수
     private bool _isThrowing;     // 던지는 동작 중인가 (트리거를 건 순간부터 동작이 끝날 때까지)
     private bool _enteredThrow;   // Throw 상태에 들어왔는가
     private bool _hasReleased;    // 이번 동작에서 수류탄을 이미 놓았는가
@@ -31,8 +36,10 @@ public class PlayerBombFire : MonoBehaviour
 
     private void Awake()
     {
+        _player = GetComponent<Player>();
         _animator = GetComponentInChildren<Animator>();
         _throwLayer = _animator.GetLayerIndex("Throw Layer");  // 이름으로 레이어 번호를 찾는다.
+        _bombCount = _maxBombCount;  // 폭탄을 가득 가지고 시작한다. 
     }
 
     private void Update()
@@ -45,11 +52,18 @@ public class PlayerBombFire : MonoBehaviour
             return;
         }
 
+        // 폭탄은 일반 모드에서만 던진다. (저격 모드의 오른쪽 버튼은 줌)
+        if (_player.WeaponMode != WeaponMode.Normal)
+        {
+            _isCharging = false;
+            return;
+        }
+
         // 던지는 동작 중에는 새로 모으거나 던질 수 없다.
         if (_isThrowing) return;
 
-        // 1. 마우스 오른쪽 버튼을 누르면 모으기 시작한다.
-        if (Input.GetButtonDown("Fire2"))
+        // 1. 마우스 오른쪽 버튼을 누른 순간, 폭탄이 남아 있으면 모으기 시작한다.
+        if (Input.GetButtonDown("Fire2") && _bombCount > 0)
         {
             _isCharging = true;
             _chargeTime = 0f;
@@ -122,5 +136,9 @@ public class PlayerBombFire : MonoBehaviour
         // 생성된 수류탄을 시선 방향으로 던지기
         Rigidbody rigidbody = bomb.GetComponent<Rigidbody>();
         rigidbody.AddForce(Camera.main.transform.forward * _throwPower, ForceMode.Impulse);
+
+        // 폭탄이 손을 떠난 순간 하나 줄이고, 구독자에게 알린다.
+        _bombCount--;
+        OnBombChanged?.Invoke(_bombCount);
     }
 }
