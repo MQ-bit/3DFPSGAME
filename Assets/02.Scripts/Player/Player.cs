@@ -36,7 +36,7 @@ public class Player : MonoBehaviour, IDamageable
 
     private void Update()
     {
-        // 숫자 키 1은 일반 모드, 2는 저격 모드
+        // 숫자 키 1은 일반 모드, 2는 저격 모드, 3은 근접 모드
         if (Input.GetKeyDown(KeyCode.Alpha1))
         {
             ChangeWeaponMode(WeaponMode.Normal);
@@ -45,6 +45,12 @@ public class Player : MonoBehaviour, IDamageable
         {
             ChangeWeaponMode(WeaponMode.Sniper);
         }
+        else if (Input.GetKeyDown(KeyCode.Alpha3))
+        {
+            ChangeWeaponMode(WeaponMode.Melee);
+        }
+
+
     }
 
     // 무기 모드를 바꾸고, 바뀌었다고 알린다.

@@ -28,6 +28,7 @@ public class PlayerGunFire : MonoBehaviour
     public int MaxBulletCount => _maxBulletCount;
 
     private Animator _animator; // 군인 모델의 애니메이터
+    private Player _player;
     private int _bulletCount;
 
     private float _fireTimer;
@@ -39,6 +40,7 @@ public class PlayerGunFire : MonoBehaviour
     private void Awake()
     {
         _bulletCount = _maxBulletCount;
+        _player = GetComponent<Player>();
     }
 
     private void Start()
@@ -64,7 +66,8 @@ public class PlayerGunFire : MonoBehaviour
 
         // 1. 마우스 왼쪽 버튼 입력 받기
         var isMouseVisible = Cursor.visible;
-        var isFiring = !isMouseVisible && Input.GetButton("Fire1") && _bulletCount > 0;
+        var isMelee = _player.WeaponMode == WeaponMode.Melee;  // 근접 모드에서는 소총이 숨겨져 있으므로 쏘지 않는다.
+        var isFiring = !isMouseVisible && !isMelee && Input.GetButton("Fire1") && _bulletCount > 0;
 
         // 버튼을 누르고 있는 동안은 발사 간격 사이에도 Fire를 유지해야 사격 모션이 떨리지 않는다.
         _animator.SetBool("Fire", isFiring);

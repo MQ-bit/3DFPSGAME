@@ -42,7 +42,10 @@ public class UI_PlayerWeapons : MonoBehaviour
     // 모드가 바뀌었다는 알림이 오면 불리는 함수(콜백)
     private void RefreshIcon(WeaponMode mode)
     {
-        _weaponIcon.sprite = _modeIcons[(int)mode];  // Normal은 0번 칸, Sniper는 1번 칸
+        var index = (int)mode;
+        if (index >= _modeIcons.Length) return;  // 아직 그림을 넣지 않은 모드는 이전 그림을 그대로 둔다.
+
+        _weaponIcon.sprite = _modeIcons[index];  // Normal은 0번 칸, Sniper는 1번 칸, Melee는 2번 칸
     }
 
     // 총알 수가 바뀌었다는 알림이 오면 불리는 함수(콜백)
