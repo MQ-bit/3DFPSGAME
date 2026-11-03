@@ -12,28 +12,15 @@ public enum GameState
     GameOver   // 게임 오버: 모두 멈춘다.
 }
 
-public class GameManager : MonoBehaviour
+public class GameManager : SingletonBehaviour<GameManager>
 {
     [SerializeField] private TextMeshProUGUI _stateText;
-    [SerializeField] private CursorManager _cursorManager;  // 멈추면 커서를 풀고, 이어서 하면 다시 잠근다.
     [SerializeField] private GameObject _optionPopup;       // 일시정지할 때 보여 줄 옵션 팝업
     [SerializeField] private GameObject _gameOverPopup;     // 쓰러졌을 때 보여 줄 게임 오버 창
 
     private GameState _state = GameState.Ready;
 
-    public static GameManager Instance { get; private set; }
     public GameState State => _state;
-
-    private void Awake()
-    {
-        if (Instance != null)
-        {
-            Destroy(gameObject);
-            return;
-        }
-
-        Instance = this;
-    }
 
     private void Start()
     {
@@ -79,7 +66,7 @@ public class GameManager : MonoBehaviour
         _state = GameState.Pause;
         Time.timeScale = 0f;  // 게임 시간이 흐르지 않는다.
         _optionPopup.SetActive(true);
-        _cursorManager.UnlockCursor();
+        CursorManager.Instance.UnlockCursor();
     }
 
     // 이어서 하기: 게임 시간을 다시 흐르게 하고 게임 중으로 돌아간다. 일시정지 중일 때만 한다.
@@ -93,7 +80,7 @@ public class GameManager : MonoBehaviour
         _state = GameState.Playing;
         Time.timeScale = 1f;  // 게임 시간이 다시 실제 시간과 같은 빠르기로 흐른다.
         _optionPopup.SetActive(false);
-        _cursorManager.LockCursor();
+        CursorManager.Instance.LockCursor();
     }
 
     // 다시 시작: 지금 씬을 처음부터 다시 불러온다.
@@ -119,6 +106,6 @@ public class GameManager : MonoBehaviour
         _state = GameState.GameOver;
         Time.timeScale = 0f;  // 좀비의 걸음과 애니메이션까지 그 자리에서 멈춘다.
         _gameOverPopup.SetActive(true);
-        _cursorManager.UnlockCursor();
+        CursorManager.Instance.UnlockCursor();
     }
 }
