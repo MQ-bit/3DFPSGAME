@@ -1,4 +1,3 @@
-using System.Text.RegularExpressions;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -7,14 +6,6 @@ using UnityEngine.UI;
 // 로그인 화면. 메인/로그인/회원가입 패널을 바꿔 보여 주고, 입력을 확인해 PlayerPrefsAccountRepository에 부탁한다.
 public class UI_Login : MonoBehaviour
 {
-    // 아이디: 이메일 형식, 또는 영문/숫자/-/@/_ 로 된 3~20자
-    private static readonly Regex IdRegex = new Regex(
-        @"^(?:[A-Za-z0-9._%+\-]+@[A-Za-z0-9\-]+(?:\.[A-Za-z0-9\-]+)+|[A-Za-z0-9\-@_]{3,20})$");
-
-    // 비밀번호: 대문자/소문자/숫자/기호를 모두 포함한 8~30자 (공백과 한글 등은 불가, ASCII 문자만)
-    private static readonly Regex PasswordRegex = new Regex(
-        @"^(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9])(?=.*[^A-Za-z0-9])[!-~]{8,30}$");
-
     private enum Panel
     {
         Main,      // 로그인 / 회원가입 / 종료 선택
@@ -48,6 +39,8 @@ public class UI_Login : MonoBehaviour
     [Header("기타")]
     [SerializeField] private TextMeshProUGUI _messageText;         // 안내 글자
     [SerializeField] private string _gameSceneName = "GameScene";  // 로그인하면 불러올 씬
+
+    private readonly AccountSpecification _accountSpecification = new AccountSpecification();
 
     private void Start()
     {
@@ -114,15 +107,15 @@ public class UI_Login : MonoBehaviour
             return;
         }
 
-        if (!IsValidId(id))
+        if (!_accountSpecification.IsIdSatisfiedBy(id))
         {
-            _messageText.text = "아이디는 이메일 또는 영문, 숫자, -, @, _ 를 쓴 3~20자여야 합니다.";
+            _messageText.text = _accountSpecification.IdErrorMessage;
             return;
         }
 
-        if (!IsValidPassword(password))
+        if (!_accountSpecification.IsPasswordSatisfiedBy(password))
         {
-            _messageText.text = "비밀번호는 대문자, 소문자, 숫자, 기호를 모두 포함한 8~30자여야 합니다.";
+            _messageText.text = _accountSpecification.PasswordErrorMessage;
             return;
         }
 
@@ -141,16 +134,6 @@ public class UI_Login : MonoBehaviour
         PlayerPrefsAccountRepository.Register(id, password);
         Show(Panel.Login);
         _messageText.text = "가입했습니다. 로그인해 주세요.";
-    }
-
-    private static bool IsValidId(string id)
-    {
-        return IdRegex.IsMatch(id);
-    }
-
-    private static bool IsValidPassword(string password)
-    {
-        return PasswordRegex.IsMatch(password);
     }
 
     private void Quit()
