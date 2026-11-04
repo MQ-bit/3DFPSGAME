@@ -9,6 +9,7 @@ public class Player : MonoBehaviour, IDamageable
 
     public float MaxHealth => _maxHealth;
     public float Health => _health;
+    public bool IsDead => _health <= 0f;
 
     private WeaponMode _weaponMode = WeaponMode.Normal;
     public WeaponMode WeaponMode => _weaponMode;

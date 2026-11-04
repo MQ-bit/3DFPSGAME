@@ -24,6 +24,7 @@ public class PlayerGunFire : MonoBehaviour
     [SerializeField] private GameObject[] _muzzleFlashes;  // 총구 불꽃 (이 가운데 하나를 켠다)
     [SerializeField] private float _flashTime = 0.05f;     // 불꽃이 보이는 시간 (초)
     public event Action<int, int> OnBulletChanged;
+    public event Action<bool> OnHitConfirmed;  // 대미지를 받는 대상에 총알이 맞았을 때 (히트 마커용). 값: 이 총알로 쓰러뜨렸는가
     public int BulletCount => _bulletCount;
     public int MaxBulletCount => _maxBulletCount;
 
@@ -173,7 +174,15 @@ public class PlayerGunFire : MonoBehaviour
             damageInfo.HitPoint = hitInfo.point;
             damageInfo.HitNormal = hitInfo.normal;
 
-            hitInfo.collider.GetComponent<IDamageable>()?.TakeDamage(damageInfo);
+            var damageable = hitInfo.collider.GetComponent<IDamageable>();
+            var wasDead = damageable != null && damageable.IsDead;
+            damageable?.TakeDamage(damageInfo);
+
+            // 이미 쓰러진 대상에게는 대미지가 들어가지 않으므로 마커를 띄우지 않는다.
+            if (damageable != null && !wasDead)
+            {
+                OnHitConfirmed?.Invoke(damageable.IsDead);  // 대미지를 줬다고 알린다. 이 총알로 쓰러졌다면 true.
+            }
 
             /*
              hitInfo.collider.GetComponent<Zombie>()?.TakeDamage(_damage);

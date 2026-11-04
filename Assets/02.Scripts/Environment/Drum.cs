@@ -18,6 +18,8 @@ public class Drum : MonoBehaviour, IDamageable
 
     private Rigidbody _rigidbody;
 
+    public bool IsDead => _health <= 0f;
+
     private void Awake()
     {
         _rigidbody = GetComponent<Rigidbody>();

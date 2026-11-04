@@ -8,10 +8,15 @@ public class UI_PlayerStats : MonoBehaviour
     [SerializeField] private Slider _healthSlider;
     [SerializeField] private Slider _staminaSlider;
 
+    [Header("체력바 잔상")]
+    [SerializeField] private Slider _healthTrailSlider;  // 체력바 뒤에서 늦게 줄어드는 잔상 바
+    [SerializeField] private float _trailDelay = 0.4f;   // 맞은 뒤 잔상이 줄어들기 시작할 때까지 기다리는 시간 (초)
+    [SerializeField] private float _trailSpeed = 0.5f;   // 잔상이 줄어드는 속도 (초당 체력 비율)
+
     [SerializeField] private Player _player;
     [SerializeField] private PlayerMove _playerMove;
 
-
+    private float _trailTimer;
 
     private void Start()
     {
@@ -21,6 +26,7 @@ public class UI_PlayerStats : MonoBehaviour
 
         // 맞기 전에도 현재 체력으로 체력바를 채워 둔다.
         RefreshHealth();
+        _healthTrailSlider.value = _healthSlider.value;  // 시작할 때는 잔상이 없다.
     }
 
     // 업데이트가 초당 60회 이상은 실행인된다.
@@ -29,6 +35,21 @@ public class UI_PlayerStats : MonoBehaviour
         // RefreshHealth(); // 폴링
 
         _staminaSlider.value = _playerMove.Stamina / PlayerMove.MaxStamina;
+        UpdateHealthTrail();
+    }
+
+    // 잔상 바가 체력바보다 높으면, 잠깐 기다렸다가 체력바 값까지 천천히 내려온다.
+    private void UpdateHealthTrail()
+    {
+        if (_healthTrailSlider.value <= _healthSlider.value) return;
+
+        if (_trailTimer > 0f)
+        {
+            _trailTimer -= Time.deltaTime;
+            return;
+        }
+
+        _healthTrailSlider.value = Mathf.MoveTowards(_healthTrailSlider.value, _healthSlider.value, _trailSpeed * Time.deltaTime);
     }
 
     private void RefreshHealth()
@@ -42,7 +63,18 @@ public class UI_PlayerStats : MonoBehaviour
         // 유튜브 구독 패턴은 유튜버가 영상을 올릴 때 이를 구독 중인 여러 구독자에 알려주는 패턴이다.
         // C#에서는 이것을 Action으로 구현할 수 있다.
 
-        _healthSlider.value = _player.Health / _player.MaxHealth;
+        float healthRatio = _player.Health / _player.MaxHealth;
+
+        if (healthRatio >= _healthTrailSlider.value)
+        {
+            _healthTrailSlider.value = healthRatio;  // 체력이 늘었을 때는 잔상도 바로 따라간다.
+        }
+        else
+        {
+            _trailTimer = _trailDelay;  // 체력이 줄었으면 잠깐 기다린 뒤 잔상이 따라 내려온다.
+        }
+
+        _healthSlider.value = healthRatio;
     }
 
 
